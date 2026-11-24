@@ -56,7 +56,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .page-track { scroll-behavior:auto; }
 }
-</style><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Kcalendar"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="application-name" content="Kcalendar"><meta name="theme-color" content="#cfe9f5"><link id="appIcon" rel="apple-touch-icon" sizes="180x180" href="kcal-icon-v2.png"><link rel="icon" type="image/png" href="kcal-icon-v2.png"><link rel="apple-touch-icon" href="kcal-icon-v2.png"><link rel="manifest" href="manifest.webmanifest">
+</style><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Kcalendar"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="application-name" content="Kcalendar"><meta name="theme-color" content="#cfe9f5"><link id="appIcon" rel="apple-touch-icon" sizes="180x180" href="kcal-icon-v2.png"><link rel="icon" type="image/png" href="kcal-icon-v2.png"><link rel="apple-touch-icon" href="kcal-icon-v2.png">
 <title>Kcalendar</title></head><body>
 
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -778,7 +778,12 @@ body.has-wall.glass-liquid .stats-card, body.has-wall.glass-liquid .month-page, 
           <label>一份约 <input type="number" id="cGram" inputmode="decimal" min="1" max="5000" placeholder="克"></label>
           <label>单位 <input type="text" id="cUnit" placeholder="碗/个" maxlength="4"></label>
         </div>
-        <p class="cnote" id="cNote">例：一碗猪脚饭约 700 千卡、400 克，单位填「碗」。</p>
+        <div class="custom-row" id="cMacRow">
+          <label><span id="cMacLab">一份蛋白质</span> <input type="number" id="cP" inputmode="decimal" min="0" max="999" placeholder="克，选填"></label>
+          <label><span id="cMacLabF">脂肪</span> <input type="number" id="cF" inputmode="decimal" min="0" max="999" placeholder="克，选填"></label>
+          <label><span id="cMacLabC">碳水</span> <input type="number" id="cC" inputmode="decimal" min="0" max="999" placeholder="克，选填"></label>
+        </div>
+        <p class="cnote" id="cNote">例：一碗猪脚饭约 700 千卡、400 克，单位填「碗」。蛋白质、脂肪、碳水选填，不填就按菜名估算。</p>
         <div class="custom-actions">
           <button type="button" class="btn" id="cCancel">取消</button>
           <button type="button" class="btn primary" id="cSave">保存</button>
@@ -1193,7 +1198,7 @@ window.__DISHES=[["猪脚饭",["猪手饭","猪蹄饭"],"碗",450,165],["卤肉�
   function fillCustomMacros() {
     var changed = false;
     customItems.forEach(function (d) {
-      if (d && d.k > 0 && !d.p && !d.f && !d.c) { var m = guessMacro(d.n, d.k); d.p = m.p; d.f = m.f; d.c = m.c; d.fi = m.fi; d.est = 1; changed = true; }
+      if (d && d.k > 0 && d.est !== 0 && !d.p && !d.f && !d.c) { var m = guessMacro(d.n, d.k); d.p = m.p; d.f = m.f; d.c = m.c; d.fi = m.fi; d.est = 1; changed = true; }
     });
     if (changed) lsSet("mp2-custom", customItems);
   }
@@ -3024,7 +3029,10 @@ window.__DISHES=[["猪脚饭",["猪手饭","猪蹄饭"],"碗",450,165],["卤肉�
       cMode = m;
       Array.prototype.forEach.call($("cMode").children, function (x) { x.classList.toggle("on", x.getAttribute("data-m") === m); });
       $("cKcalLab").textContent = m === "serve" ? "一份热量" : "每100克";
-      $("cNote").textContent = m === "serve" ? "例：一碗猪脚饭约 700 千卡、400 克，单位填「碗」。" : "例：鸡胸肉每100克约 118 千卡，一块约 150 克。";
+      $("cMacLab").textContent = m === "serve" ? "一份蛋白质" : "每100克蛋白质";
+      $("cMacLabF").textContent = m === "serve" ? "脂肪" : "脂肪";
+      $("cMacLabC").textContent = m === "serve" ? "碳水" : "碳水";
+      $("cNote").textContent = m === "serve" ? "例：一碗猪脚饭约 700 千卡、400 克，单位填「碗」。蛋白质、脂肪、碳水选填，不填就按菜名估算。" : "例：鸡胸肉每100克约 118 千卡，一块约 150 克。蛋白质、脂肪、碳水选填，不填就按菜名估算。";
     }
     $("cMode").addEventListener("click", function (e) { var b2 = e.target.closest("button[data-m]"); if (b2) setCMode(b2.getAttribute("data-m")); });
     $("cName").addEventListener("blur", function () {
@@ -3036,7 +3044,7 @@ window.__DISHES=[["猪脚饭",["猪手饭","猪蹄饭"],"碗",450,165],["卤肉�
     });
     window.__openCustomForm = function (name) {
       form.hidden = false; $("cName").value = name || "";
-      $("cUnit").value = ""; $("cGram").value = ""; $("cKcal").value = "";
+      $("cUnit").value = ""; $("cGram").value = ""; $("cKcal").value = ""; $("cP").value = ""; $("cF").value = ""; $("cC").value = "";
       setCMode("serve");
       if (name) { var g = guessServing(name); $("cUnit").value = g.u; $("cGram").value = g.w; if (g.k) $("cKcal").value = Math.round(g.w * g.k / 100); }
       try { form.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}
@@ -3050,9 +3058,17 @@ window.__DISHES=[["猪脚饭",["猪手饭","猪蹄饭"],"碗",450,165],["卤肉�
       if (!name || isNaN(kin) || kin < 1 || isNaN(gram) || gram < 1) { toast("请填写名称、热量和一份大约多少克", "warn"); return; }
       var k100 = cMode === "serve" ? Math.round(kin * 100 / gram * 10) / 10 : Math.round(kin * 10) / 10;
       if (k100 < 1 || k100 > 1200) { toast("热量看起来不对，每100克应在 1–1200 千卡之间", "warn"); return; }
-      var item = makeCustomItem(name, k100, gram, unit);
+      var mac = null, pin = $("cP").value, fin = $("cF").value, cin = $("cC").value;
+      if (pin !== "" || fin !== "" || cin !== "") {
+        var conv = function (v) { var n = parseFloat(v); if (isNaN(n) || n < 0) n = 0; return Math.round((cMode === "serve" ? n * 100 / gram : n) * 10) / 10; };
+        var gm = guessMacro(name, k100);
+        mac = { p: conv(pin), f: conv(fin), c: conv(cin), fi: gm.fi };
+        if (mac.p > 100 || mac.f > 100 || mac.c > 100 || mac.p + mac.f + mac.c > 105) { toast("蛋白质、脂肪、碳水加起来超过了食物本身的重量，请检查", "warn"); return; }
+      }
+      var item = makeCustomItem(name, k100, gram, unit, mac);
+      if (mac) { item.est = 0; lsSet("mp2-custom", customItems); }
       form.hidden = true;
-      $("cName").value = ""; $("cKcal").value = ""; $("cGram").value = ""; $("cUnit").value = "";
+      $("cName").value = ""; $("cKcal").value = ""; $("cGram").value = ""; $("cUnit").value = ""; $("cP").value = ""; $("cF").value = ""; $("cC").value = "";
       activeCat = "custom"; searchQ = ""; if ($("search")) $("search").value = "";
       showCat();
       setAmt(item.id, item.w); afterChange(item.id);
@@ -3372,7 +3388,7 @@ window.__DISHES=[["猪脚饭",["猪手饭","猪蹄饭"],"碗",450,165],["卤肉�
   /* ---------- 关于本机 / 更新日志 / 问题反馈 ---------- */
   var APP_VERSION = "v9";
   var CHANGELOG = [
-    ["v9", ["修复主屏幕图标不显示（图标声明原来放错了位置）；全屏显示时顶部延伸到状态栏下方，不再留黑边，顶部留白也缩小了；修复从主屏幕划掉后重新打开，底部出现黑条；首页蛋白质、脂肪、碳水没设目标时也显示参考进度条（按热量目标的 20% / 27% / 53% 估算）", "主屏幕图标改为单独的图片文件（kcal-icon-v2.png），iPhone 才能正确显示图标", "安全加固：自定义名称、导入的照片和壁纸都做了安全处理，导入别人的备份文件也不会出问题", "新增「添加到主屏幕」引导：只在浏览器里打开时出现（已从主屏幕打开则不显示），分 iPhone Safari、安卓、微信/QQ 等内置浏览器三种提示；设置里也能随时查看；并提醒浏览器和主屏幕里的记录是分开的，要先导出再导入", "主屏幕图标和名称：名称 Kcalendar，图标为海岛实景加日历卡片", "主页纤维没设目标时也显示进度条（默认按热量目标推算，约 20–30 克）；月度回顾下面的日期数字不再挤在一起；菜品库再补充约 470 道（地方小吃、海鲜、汤品、卤味、甜点、饮品、调味品等）", "日历页的「饮食历史搜索」「多照片相册」合并成一组 iOS 列表行，点开再展开；统计页的「自动算我的目标」「月度回顾」样式和设置页统一", "修复 iPhone 上点输入框页面会自动放大的问题", "整体精简：添加食物的提示更短；没有照片时不显示空的「饮食相册」；断食计时卡更紧凑；去掉多余的说明小字", "轻断食页面按「几点到几点断食」来设：①选断食时长（12 / 14 / 16 / 18 小时）②用 + / − 调开始断食和结束断食的时间 ③点「开始轻断食」，或「我现在就开始断食」一键从现在计时；开启后页面顶部显示实时计时，主页继续挂着计时卡；不知道怎么选可按作息一键推荐", "「更多」页改成「设置」，按使用顺序重排成 iOS 分组列表：轻断食 / 暴食了怎么办 → 目标与单位、壁纸与显示 → 数据与备份、在线查询 → 关于、免费声明、更新日志、问题反馈；各项点开再展开，页面更干净", "去掉「采购清单」：它列的都是已经吃过的食物，不一定要买，用处不大", "轻断食加入「我吃东西了」：中途没忍住可以一键结束这次，记下这次已坚持多久，可从现在重新开始计时；下个断食时间照常开始", "修复健身页左滑删除卡住、露出红块的问题（真正原因是新加的开关样式和滑动状态重名）；删除按钮像连在行后面：滑多少露多少，松手收回时同步消失；划到底可直接删除", "日历页点某一天，下面直接显示这天吃了什么（按餐、克数、千卡），不用再翻回首页；需要改再点「去修改这天」", "修复：旧版留下的自定义食物会让页面启动出错，导致壁纸、食材、搜索、更新日志等都点不了，已修好", "轻断食加入实时计时：开启后主页显示已断食时长、还剩多久和进度条，每秒更新", "统计页补回几项简单统计；免费声明排版适配 iPhone 屏幕；", "主页营养素条加入膳食纤维：蛋白质 / 脂肪 / 碳水 / 纤维四项，进度条一眼看够没够，达标变绿", "菜品库、拼饭和自定义食物也会按食物类型估算蛋白质、脂肪、碳水和纤维，以前这些食物不计入营养素，现在会算；旧的自定义食物自动补上（均为估算）", "统计页去掉与主页重复的「今天达标情况」，只保留目标计算、近 7 天、体重和月度回顾", "新增「轻断食」：可选 12:12 / 14:10 / 16:8 / 18:6，自己定几点开始吃；也可按作息（早睡早起 / 普通 / 夜猫子）一键套用推荐；开启后主页显示现在是进食还是断食、还剩多久；并有适用人群提醒", "新增「暴食了怎么办」：吃超过目标较多时主页出现入口，设置里也能进。不批评、不催吐、不绝食，给今晚和明天的轻量建议；标记后这一天不再显示红色，次日首页出现可勾选的小清单，目标不用减", "新增「免费声明」：说明全部功能免费、作者从未收费，谨防有人打信息差收费，并附作者 Threads 与抖音账号", "设置页新增轻断食、暴食了怎么办入口；备份与导入包含轻断食和补救记录", "界面更精简：去掉多余的说明文字，间距更紧凑"]],
+    ["v9", ["修复主屏幕图标不显示（图标声明原来放错了位置）；全屏显示时顶部延伸到状态栏下方，不再留黑边，顶部留白也缩小了；自定义食材可以填蛋白质、脂肪、碳水（选填，不填就估算）；修复从主屏幕划掉后重新打开，底部出现黑条（尝试中）；首页蛋白质、脂肪、碳水没设目标时也显示参考进度条（按热量目标的 20% / 27% / 53% 估算）", "主屏幕图标改为单独的图片文件（kcal-icon-v2.png），iPhone 才能正确显示图标", "安全加固：自定义名称、导入的照片和壁纸都做了安全处理，导入别人的备份文件也不会出问题", "新增「添加到主屏幕」引导：只在浏览器里打开时出现（已从主屏幕打开则不显示），分 iPhone Safari、安卓、微信/QQ 等内置浏览器三种提示；设置里也能随时查看；并提醒浏览器和主屏幕里的记录是分开的，要先导出再导入", "主屏幕图标和名称：名称 Kcalendar，图标为海岛实景加日历卡片", "主页纤维没设目标时也显示进度条（默认按热量目标推算，约 20–30 克）；月度回顾下面的日期数字不再挤在一起；菜品库再补充约 470 道（地方小吃、海鲜、汤品、卤味、甜点、饮品、调味品等）", "日历页的「饮食历史搜索」「多照片相册」合并成一组 iOS 列表行，点开再展开；统计页的「自动算我的目标」「月度回顾」样式和设置页统一", "修复 iPhone 上点输入框页面会自动放大的问题", "整体精简：添加食物的提示更短；没有照片时不显示空的「饮食相册」；断食计时卡更紧凑；去掉多余的说明小字", "轻断食页面按「几点到几点断食」来设：①选断食时长（12 / 14 / 16 / 18 小时）②用 + / − 调开始断食和结束断食的时间 ③点「开始轻断食」，或「我现在就开始断食」一键从现在计时；开启后页面顶部显示实时计时，主页继续挂着计时卡；不知道怎么选可按作息一键推荐", "「更多」页改成「设置」，按使用顺序重排成 iOS 分组列表：轻断食 / 暴食了怎么办 → 目标与单位、壁纸与显示 → 数据与备份、在线查询 → 关于、免费声明、更新日志、问题反馈；各项点开再展开，页面更干净", "去掉「采购清单」：它列的都是已经吃过的食物，不一定要买，用处不大", "轻断食加入「我吃东西了」：中途没忍住可以一键结束这次，记下这次已坚持多久，可从现在重新开始计时；下个断食时间照常开始", "修复健身页左滑删除卡住、露出红块的问题（真正原因是新加的开关样式和滑动状态重名）；删除按钮像连在行后面：滑多少露多少，松手收回时同步消失；划到底可直接删除", "日历页点某一天，下面直接显示这天吃了什么（按餐、克数、千卡），不用再翻回首页；需要改再点「去修改这天」", "修复：旧版留下的自定义食物会让页面启动出错，导致壁纸、食材、搜索、更新日志等都点不了，已修好", "轻断食加入实时计时：开启后主页显示已断食时长、还剩多久和进度条，每秒更新", "统计页补回几项简单统计；免费声明排版适配 iPhone 屏幕；", "主页营养素条加入膳食纤维：蛋白质 / 脂肪 / 碳水 / 纤维四项，进度条一眼看够没够，达标变绿", "菜品库、拼饭和自定义食物也会按食物类型估算蛋白质、脂肪、碳水和纤维，以前这些食物不计入营养素，现在会算；旧的自定义食物自动补上（均为估算）", "统计页去掉与主页重复的「今天达标情况」，只保留目标计算、近 7 天、体重和月度回顾", "新增「轻断食」：可选 12:12 / 14:10 / 16:8 / 18:6，自己定几点开始吃；也可按作息（早睡早起 / 普通 / 夜猫子）一键套用推荐；开启后主页显示现在是进食还是断食、还剩多久；并有适用人群提醒", "新增「暴食了怎么办」：吃超过目标较多时主页出现入口，设置里也能进。不批评、不催吐、不绝食，给今晚和明天的轻量建议；标记后这一天不再显示红色，次日首页出现可勾选的小清单，目标不用减", "新增「免费声明」：说明全部功能免费、作者从未收费，谨防有人打信息差收费，并附作者 Threads 与抖音账号", "设置页新增轻断食、暴食了怎么办入口；备份与导入包含轻断食和补救记录", "界面更精简：去掉多余的说明文字，间距更紧凑"]],
     ["v8", ["统计页重做：最上面是「今天达标情况」，热量、蛋白质、脂肪、碳水各一条进度，一眼看够没够；删掉了重复的营养素图表，月度回顾收起来了", "新增「自动算我的目标」（在统计页）：填性别、年龄、身高、体重（体脂率可选），自动算出每天的热量、蛋白质、脂肪、碳水和膳食纤维目标，一键采用", "搜索支持拼饭：输入「猪脚拼排骨拼扣肉饭」，按每样菜占多少份加一碗饭，算出合计热量", "食材库扩充约 170 种：平菇、香菇、各类蔬菜、肉类、鱼虾蟹贝、刺身（黑虎虾、甜虾、金枪鱼等）、蛋奶、常用油和调料", "搜索能识别「水煮」「白灼」「清蒸」「刺身」等做法词，「水煮平菇」「黑虎虾刺身」都能直接找到", "问题反馈里示例文字加深，多照片相册的提示语换行修正"]],
     ["v7", ["内置约 560 道常见菜（猪脚饭、拉面、麻辣烫、奶茶……），输入名字就有份量和热量，可选小份 / 正常 / 大份", "称重按买回来的整重（带壳、带骨、带皮），热量自动按可食部分折算，虾、蟹、贝、蛋、蔬菜、带骨肉都适用", "默认壁纸换成海岛，并加强了文字可读性", "新增关于本机、更新日志、问题反馈"]],
     ["v6", ["导入备份可选「合并」或「替换」，并且能撤销；超过两周没备份会提醒", "热量目标按日期保存，改目标不影响过去的日子；可设蛋白质、脂肪、碳水目标", "新增「这餐没吃」，和「还没记录」区分开", "体重可选公斤、斤、磅", "健身：休息日可临时练、动作可只加到今天、每个动作有历史曲线，删除可撤销"]],
